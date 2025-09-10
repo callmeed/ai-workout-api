@@ -1,0 +1,55 @@
+# Node / pnpm
+node_modules/
+pnpm-lock.yaml
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts
+dist/
+build/
+.esbuild/
+*.tsbuildinfo
+
+# Local env/config
+.env
+.env.*
+!.env.example
+
+# Wrangler / Cloudflare
+.wrangler/
+wrangler.toml.local
+
+# TypeScript emitted JS (we want only .ts tracked)
+src/**/*.js
+src/**/*.js.map
+src/**/*.d.ts
+
+# Logs
+*.log
+logs/
+*.log.*
+*.out
+*.pid
+*.gz
+
+# macOS clutter
+.DS_Store
+
+# Xcode / iOS (if you drop iOS + backend into one repo)
+*.xcworkspace
+xcuserdata/
+DerivedData/
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcworkspace/contents.xcworkspacedata
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Other IDE
+.idea/
+.vscode/
+*.swp

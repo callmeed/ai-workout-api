@@ -1,0 +1,16 @@
+name = "workout-api"
+main = "src/entry.edge.ts"
+compatibility_date = "2025-09-05"
+# Enable only if some deps need Node builtins (Buffer, crypto, etc.)
+# node_compat = true
+
+[vars]
+APP_ENV = "production"
+
+[env.staging]
+name = "workout-api-staging"
+[env.staging.vars]
+APP_ENV = "staging"
+
+# If you want a custom domain instead of *.workers.dev:
+# routes = [{ pattern = "api.example.com/*", zone_name = "example.com" }]
