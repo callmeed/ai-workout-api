@@ -52,8 +52,7 @@ Return ONLY JSON (no markdown).
         type: "json_schema",
         json_schema: {
           name: "Workout",
-          schema: workoutJsonSchema,
-          strict: true
+          schema: workoutJsonSchema
         }
       },
       temperature: 0.6

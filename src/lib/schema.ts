@@ -159,10 +159,25 @@ const Sets = BlockBase.extend({
   description: "Strength block using sets × reps, optionally with load/RPE/rest (null when not applicable).",
 })
 
+/** Superset: alternate two movements for N sets (A1/A2), optional rest between sets */
+const Superset = BlockBase.extend({
+  type: z.literal("superset"),
+  sets: positiveInt.meta({ description: "Number of alternating sets (A1/A2)" }),
+  rest_between_sets: isoDuration.optional().meta({ description: "Optional rest between sets (ISO-8601)" }),
+  pair: z
+    .array(Movement)
+    .length(2)
+    .meta({ description: "Exactly two movements performed as A1 and A2, alternated" }),
+}).meta({
+  title: "Superset",
+  description: "Two movements alternated (A1/A2) for a set count, with optional rest.",
+})
+
+
 /** Union of blocks (discriminated by 'type') */
 export const Block = z
-  .discriminatedUnion("type", [Amrap, ForTime, Emom, Sets])
-  .meta({ title: "Block", description: "One workout part: amrap | for_time | emom | sets" })
+  .discriminatedUnion("type", [Amrap, ForTime, Emom, Sets, Superset])
+  .meta({ title: "Block", description: "One workout part: amrap | for_time | emom | sets | superset" })
 
 /** Top-level workout (all formerly-optional fields now required but nullable/empty-capable) */
 export const Workout = z
