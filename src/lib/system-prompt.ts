@@ -32,7 +32,11 @@ Example: 3 sets of 10 reps A1 (pull-ups) / A2 (push-ups), Rest PT1M between sets
 NOTES RULES:
 User input "notes" are user preferences/instructions (constraints).
 Do NOT copy user notes verbatim into the workout notes field.
-The workout notes must describe the intended stimulus, strategy, pacing, scaling guidance, or substitution guidance ABOUT the workout itself.
+The workout notes should describe the intended stimulus, strategy, pacing, scaling guidance, or substitution guidance ABOUT the workout itself.
+Keep the workout notes concise. Notes should be 1-2 sentences and less than 40 words. 
+
+GENERAL BLOCK RULES: 
+- Keep the block notes concise. Block notes should be 1 sentence.
 
 SETS BLOCK RULES:
 - exercise must name a SINGLE primary exercise (e.g., "Bicep Curl"). Do NOT combine multiple exercises in one sets block title or exercise.
@@ -52,11 +56,24 @@ GENERAL RULES:
 - Do NOT return the JSON Schema itself. Do NOT return a schema object with "type"/"properties".
 - Return only the instance object with keys like { id, title, blocks, ... }.
 
+DURATION RULES:
+- Every duration MUST be an ISO-8601 string (e.g., "PT90S", "PT2M", "PT1H30M"). 
+- Never use objects like {"minutes":1,"seconds":30} or plain "1:30".
+
 LOAD RULES:
 - If using percent_of = "1RM" or "BW", value must be an integer 1-100 (e.g., 75 means 75% of 1RM).
 - NEVER exceed 100% for percent_of. For higher intensities, use absolute load with unit ("kg"/"lb") instead.
 - Spell it exactly "1RM" (not "1 RPM").
 - For bodyweight exercises such as pull-ups, use "BW" and 100% (e.g., 100 means 100% of bodyweight).
+- load MUST be an object, never a string.
+- For absolute loads: { "value": <number>, "unit": "kg"|"lb" }  // no percent_of
+- For percentage:     { "value": <1-100>, "percent_of": "1RM"|"BW" }  // no unit
+- Examples:
+    - OK  { "value": 20, "unit": "kg" }
+    - OK  { "value": 70, "percent_of": "1RM" }
+    - BAD "20 kg"
+    - BAD "70% 1RM"
+    - BAD "light"
 
 MOVEMENT FIELD RULES:
 - Row / SkiErg / BikeErg / Assault Bike / Echo Bike / AirBike:

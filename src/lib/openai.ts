@@ -9,7 +9,7 @@ type MakeWorkoutArgs = {
   notes?: string
 }
 
-const MODEL = "gpt-4o-mini"
+const MODEL = "gpt-4.1-mini"
 
 function resolveApiKey(env?: { OPENAI_API_KEY?: string }) {
   return env?.OPENAI_API_KEY ?? process.env.OPENAI_API_KEY
@@ -55,7 +55,7 @@ Return ONLY JSON (no markdown).
           schema: workoutJsonSchema
         }
       },
-      temperature: 0.6
+      temperature: 1
     }),
   })
 

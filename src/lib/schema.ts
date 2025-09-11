@@ -14,73 +14,76 @@ const isoDuration = z
 
 const positiveInt = z.number().int().min(1)
 
-const nullableString = z.string().nullable()
-const nullableNumber = z.number().nullable()
+const nullableString = z.string().nullable().optional()
+const nullableNumber = z.number().nullable().optional()
 
 /** Load (weight prescription) */
 export const Load = z
   .object({
     value: z.number().nonnegative().meta({ description: "Numeric load value (non-negative)" }),
-    unit: z.enum(["lb", "kg"]).meta({ description: "Load unit: pounds or kilograms" }),
+    // Make unit optional so percent-only is allowed when percent_of is used
+    unit: z.enum(["lb", "kg"]).optional().meta({ description: "Load unit: pounds or kilograms (omit when using percent_of)" }),
     percent_of: z
       .enum(["1RM", "BW"])
       .nullable()
-      .meta({ description: "If present, value is interpreted as a percentage of 1RM or bodyweight; null otherwise" }),
+      .optional()
+      .meta({ description: "If present, value is interpreted as a percentage of 1RM or bodyweight; null/omit otherwise" }),
   })
   .strict()
   .meta({
     title: "Load",
-    description: "Weight prescription either as absolute load with unit or a percent of 1RM/BW",
+    description: "Absolute load (value+unit) OR percentage (value+percent_of). Avoid mixing if possible.",
   })
 
-/** Movement (one exercise item) — required but nullable fields to satisfy strict mode */
+/** Movement (one exercise item) — keys optional+nullable to tolerate model omissions */
 export const Movement = z
   .object({
     name: z.string().meta({ description: "Exercise name (e.g., Pull-up, Row, Air Squat)" }),
-    reps: positiveInt.nullable().meta({ description: "Repetitions for this movement; null if not applicable" }),
-    distance: z.number().nonnegative().nullable().meta({ description: "Distance value; null if not applicable" }),
+    reps: positiveInt.optional().nullable().meta({ description: "Repetitions; null/omit if not applicable" }),
+    distance: z.number().nonnegative().optional().nullable().meta({ description: "Distance value; null/omit if not applicable" }),
     distance_unit: z
       .enum(["m", "km", "mi"])
+      .optional()
       .nullable()
-      .meta({ description: "Unit for distance (meters, kilometers, miles); null if not applicable" }),
-    calories: positiveInt.nullable().meta({ description: "Calories for erg work; null if not applicable" }),
-    time: isoDuration.nullable().meta({ description: "Time budget (ISO-8601); null if not applicable" }),
-    load: Load.nullable().meta({ description: "Load prescription; null if bodyweight / not applicable" }),
-    tempo: nullableString.meta({ description: "Tempo notation, e.g., 30X0; null if not applicable" }),
-    equipment: z.array(z.string()).nullable().meta({ description: "Equipment used; null if not applicable" }),
-    notes: nullableString.meta({ description: "Coaching or scaling notes; null if not applicable" }),
-    scaling: z.array(z.string()).nullable().meta({ description: "Alternative versions for scaling; null if none" }),
+      .meta({ description: "Unit for distance (meters, kilometers, miles); null/omit if not applicable" }),
+    calories: positiveInt.optional().nullable().meta({ description: "Calories for erg work; null/omit if not applicable" }),
+    time: isoDuration.optional().nullable().meta({ description: "Time budget (ISO-8601); null/omit if not applicable" }),
+    load: Load.optional().nullable().meta({ description: "Load prescription; null/omit if bodyweight / not applicable" }),
+    tempo: nullableString.meta({ description: "Tempo notation, e.g., 30X0; null/omit if not applicable" }),
+    equipment: z.array(z.string()).optional().nullable().meta({ description: "Equipment used; null/omit if not applicable" }),
+    notes: nullableString.meta({ description: "Coaching or scaling notes; null/omit if not applicable" }),
+    scaling: z.array(z.string()).optional().nullable().meta({ description: "Alternative versions for scaling; null/omit if none" }),
   })
   .strict()
   .meta({
     title: "Movement",
     description:
-      "A single exercise prescription. Provide reps, distance(+unit), calories, time, or load as appropriate (unused fields are null).",
+      "A single exercise prescription. Provide reps, distance(+unit), calories, time, or load as appropriate.",
   })
 
-/** Score (how the user is scored for a block) — all keys required; nullable where optional */
+/** Score (how the user is scored for a block) — optional+nullable for non-critical fields */
 const Score = z
   .object({
     type: z
       .enum(["reps", "rounds", "time", "load", "calories", "distance"])
       .meta({ description: "Primary scoring domain for the block" }),
-    tie_break: nullableString.meta({ description: "Tie-break rule; null if not applicable" }),
-    target: nullableNumber.meta({ description: "Target number (e.g., desired rounds/reps/time); null if none" }),
-    cap: isoDuration.nullable().meta({ description: "Time cap for the block (ISO-8601); null if no cap" }),
+    tie_break: nullableString.meta({ description: "Tie-break rule; null/omit if not applicable" }),
+    target: nullableNumber.meta({ description: "Target number (e.g., desired rounds/reps/time); null/omit if none" }),
+    cap: isoDuration.nullable().optional().meta({ description: "Time cap (ISO-8601); null/omit if no cap" }),
   })
   .strict()
   .meta({
     title: "Score",
-    description: "Scoring metadata for a block (domain, tie-break/target/cap are null when not applicable).",
+    description: "Scoring metadata for a block (domain, optional tie-break/target/cap).",
   })
 
-/** Base for any block — score/notes now required but nullable */
+/** Base for any block — score/notes optional+nullable */
 const BlockBase = z
   .object({
     title: z.string().meta({ description: "Human-friendly label for this block" }),
     type: z.string().meta({ description: "Discriminator selecting the block kind" }),
-    notes: nullableString.meta({ description: "Notes for this block; null if not applicable" }),
-    score: Score.nullable().meta({ description: "Scoring; include when the block should be scored, null otherwise" }),
+    notes: nullableString.meta({ description: "Notes for this block; null/omit if not applicable" }),
+    score: Score.nullable().optional().meta({ description: "Scoring; include when scored, null/omit otherwise" }),
   })
   .strict()
   .meta({
@@ -103,11 +106,11 @@ const Amrap = BlockBase.extend({
 const ForTime = BlockBase.extend({
   type: z.literal("for_time"),
   rounds: positiveInt.meta({ description: "Number of rounds of the sequence (use 1 for chipper-style)" }),
-  time_cap: isoDuration.nullable().meta({ description: "Time cap for the workout; null if no cap" }),
+  time_cap: isoDuration.nullable().optional().meta({ description: "Time cap; null/omit if no cap" }),
   sequence: z.array(Movement).min(1).meta({ description: "Ordered list of movements to complete" }),
 }).meta({
   title: "ForTime",
-  description: "Complete prescribed work as fast as possible. Time cap is optional (null if not provided).",
+  description: "Complete prescribed work as fast as possible. Time cap is optional.",
 })
 
 /** EMOM: every minute on the minute */
@@ -146,9 +149,9 @@ const Sets = BlockBase.extend({
         .object({
           sets: positiveInt.meta({ description: "Number of sets in this line item" }),
           reps: positiveInt.meta({ description: "Reps per set in this line item" }),
-          load: Load.nullable().meta({ description: "Load prescription per line item; null if not specified" }),
-          rpe: z.number().min(1).max(10).nullable().meta({ description: "RPE (1–10); null if not specified" }),
-          rest: isoDuration.nullable().meta({ description: "Rest between sets (ISO-8601); null if not specified" }),
+          load: Load.optional().nullable().meta({ description: "Load prescription per line item; null/omit if none" }),
+          rpe: z.number().min(1).max(10).optional().nullable().meta({ description: "RPE (1–10); null/omit if none" }),
+          rest: isoDuration.optional().nullable().meta({ description: "Rest between sets (ISO-8601); null/omit if none" }),
         })
         .strict()
     )
@@ -156,14 +159,14 @@ const Sets = BlockBase.extend({
     .meta({ description: "One or more set/reps prescriptions" }),
 }).meta({
   title: "Sets",
-  description: "Strength block using sets × reps, optionally with load/RPE/rest (null when not applicable).",
+  description: "Strength block using sets × reps, optionally with load/RPE/rest.",
 })
 
 /** Superset: alternate two movements for N sets (A1/A2), optional rest between sets */
 const Superset = BlockBase.extend({
   type: z.literal("superset"),
   sets: positiveInt.meta({ description: "Number of alternating sets (A1/A2)" }),
-  rest_between_sets: isoDuration.optional().meta({ description: "Optional rest between sets (ISO-8601)" }),
+  rest_between_sets: isoDuration.optional().nullable().meta({ description: "Optional rest between sets (ISO-8601)" }),
   pair: z
     .array(Movement)
     .length(2)
@@ -173,13 +176,12 @@ const Superset = BlockBase.extend({
   description: "Two movements alternated (A1/A2) for a set count, with optional rest.",
 })
 
-
 /** Union of blocks (discriminated by 'type') */
 export const Block = z
   .discriminatedUnion("type", [Amrap, ForTime, Emom, Sets, Superset])
   .meta({ title: "Block", description: "One workout part: amrap | for_time | emom | sets | superset" })
 
-/** Top-level workout (all formerly-optional fields now required but nullable/empty-capable) */
+/** Top-level workout — optional+nullable for non-critical fields */
 export const Workout = z
   .object({
     id: z.string().meta({ description: "Stable identifier for this workout" }),
@@ -187,12 +189,13 @@ export const Workout = z
     level: z
       .enum(["beginner", "intermediate", "advanced", "rx"])
       .nullable()
-      .meta({ description: "Suggested difficulty level; null if unspecified" }),
-    tags: z.array(z.string()).nullable().meta({ description: "Tags for search/filter; null if none" }),
-    notes: nullableString.meta({ description: "Coach notes; null if none" }),
+      .optional()
+      .meta({ description: "Suggested difficulty level; null/omit if unspecified" }),
+    tags: z.array(z.string()).nullable().optional().meta({ description: "Tags for search/filter; null/omit if none" }),
+    notes: nullableString.meta({ description: "Coach notes; null/omit if none" }),
     blocks: z.array(Block).min(1).meta({ description: "One or more blocks comprising the workout" }),
-    warmup: z.array(z.string()).nullable().meta({ description: "Warm-up suggestions; null if none" }),
-    cooldown: z.array(z.string()).nullable().meta({ description: "Cool-down suggestions; null if none" }),
+    warmup: z.array(z.string()).nullable().optional().meta({ description: "Warm-up suggestions; null/omit if none" }),
+    cooldown: z.array(z.string()).nullable().optional().meta({ description: "Cool-down suggestions; null/omit if none" }),
   })
   .strict()
   .meta({
